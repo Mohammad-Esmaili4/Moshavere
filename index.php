@@ -1,8 +1,41 @@
 <?php
-$question = 'این یک پرسش نمونه است';
-$msg = 'این یک پاسخ نمونه است';
-$en_name = 'hafez';
-$fa_name = 'حافظ';
+
+session_start();
+
+$people = json_decode(file_get_contents(__DIR__ . "/people.json"), true);
+$messages = explode("\n", file_get_contents(__DIR__ . "/messages.txt"));
+
+if ($_POST != null) {
+    $question = $_POST['question'];
+
+    $en_name = $_POST['person'];
+    $fa_name = $people[$en_name];
+    $msg = $messages[array_rand($messages)];
+    $saveAnswer = true;
+    if (isset($_SESSION[$en_name])) {
+        foreach ($_SESSION[$en_name] as $item) {
+            if ($item['question'] == $question) {
+                $msg = $item['answer'];
+                $saveAnswer = false;
+                break;
+            }
+        }
+    }
+
+    if ($saveAnswer) {
+        $_SESSION[$en_name][] = [
+            'question' => $question,
+            'answer' => $msg
+        ];
+    }
+} else {
+    $msg = "سوال خود را بپرس!";
+    $question = '';
+    $en_name = array_rand($people);;
+    $fa_name = $people[$en_name];
+}
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,7 +48,9 @@ $fa_name = 'حافظ';
 <p id="copyright">تهیه شده برای درس کارگاه کامپیوتر،دانشکده کامییوتر، دانشگاه صنعتی شریف</p>
 <div id="wrapper">
     <div id="title">
-        <span id="label">پرسش:</span>
+        <span id="label">
+            <?php if ($question != null) echo "پرسش:" ?>
+        </span>
         <span id="question"><?php echo $question ?></span>
     </div>
     <div id="container">
@@ -36,11 +71,12 @@ $fa_name = 'حافظ';
             را از
             <select name="person">
                 <?php
-                /*
-                 * Loop over people data and
-                 * enter data inside `option` tag.
-                 * E.g., <option value="hafez">حافظ</option>
-                 */
+                foreach ($people as $enPersonName => $faPersonName) {
+                    if ($en_name == $enPersonName)
+                        echo "<option value='$enPersonName' selected=''>$faPersonName</option>";
+                    else
+                        echo "<option value='$enPersonName'>$faPersonName</option>";
+                }
                 ?>
             </select>
             <input type="submit" value="بپرس"/>
